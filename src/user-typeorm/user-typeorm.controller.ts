@@ -24,14 +24,23 @@ export class UserTypeormController {
   }
 
   @Get('search')
-  search(@Query('username') username: string) {
-    return this.userTypeormService.search(username);
+  search(
+    @Query('username') username: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 2,
+  ) {
+    return this.userTypeormService.search(username, page, limit);
   }
+
+  // @Get()
+  // findAll() {
+  //   return this.userTypeormService.findAll();
+  // }
 
   @Get()
   @Render('user-typeorm/index')
-  findAll() {
-    return this.userTypeormService.findAll();
+  findUserPage(@Query('page') page = 1, @Query('limit') limit = 2) {
+    return this.userTypeormService.findUserPage(page, limit);
   }
 
   @Get(':id')

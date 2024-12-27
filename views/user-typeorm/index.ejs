@@ -15,7 +15,7 @@
         transform: translate(-50%, -50%);
         background: white;
         padding: 20px;
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: 4px 6px rgba(0, 0, 0, 0.1);
         z-index: 1000;
       }
 
@@ -28,12 +28,23 @@
         background: rgba(0, 0, 0, 0.5);
         z-index: 999;
       }
+
+      .pagination {
+        margin-top: 20px;
+      }
+
+      .pagination a {
+        margin: 0 5px;
+        text-decoration: none;
+      }
     </style>
 </head>
 <body>
-<h1>Users</h1>
+<h1><a href="/user-typeorm">Users</a></h1>
 
 <button onclick="showAddForm()">Add New User</button>
+
+<!-- user list -->
 <ul>
     <% userList.forEach(user => { %>
         <li>
@@ -47,12 +58,26 @@
     <% }); %>
 </ul>
 
+<!-- pagination -->
+<div class="pagination">
+    <% if (Number(page) > 1) { %>
+        <a href="?page=<%= Number(page) - 1 %>">Previous</a>
+    <% } %>
+
+    <% for (let i = 1; i <= Number(totalPage); i++) { %>
+        <a href="?page=<%= i %>"><%= i %></a>
+    <% } %>
+
+    <% if (Number(page) < Number(totalPage)) { %>
+        <a href="?page=<%= Number(page) + 1 %>">Next</a>
+    <% } %>
+</div>
+
 <!-- user search -->
 <form id="searchUserForm">
     <label>Username: <input type="text" name="username"></label>
     <button type="submit">Search</button>
 </form>
-<div> Page</div>
 
 <!-- user detail -->
 <div id="detailModal" class="hidden">
@@ -136,7 +161,7 @@
           method: "GET"
         });
 
-        console.log(response)
+        console.log(response);
         if (response.ok) {
           const body = await response.json();
           console.log(body.user);
@@ -300,43 +325,80 @@
     const formData = new FormData(form);
     const username = formData.get("username");
 
-    if(username) {
+    if (username) {
       try {
-        const response = await fetch(`/user-typeorm/search?username=${username}`, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        });
+        let currentPage = 1;
 
-        if (response.ok) {
+        async function fetchData(page = 1) {
+          const response = await fetch(`/user-typeorm/search?username=${username}&page=${page}`);
           const body = await response.json();
-          console.log(body);
-          console.log(body.userList)
 
+          if (response.ok) {
+            renderUserList(body.userList);
+            renderPagination(body.currentPage, body.totalPage, username);
+            // url 갱신
+            history.pushState({}, "",
+              `/user-typeorm/search?username=${username}&page=${body.currentPage}`);
+          } else {
+            console.error("Error Response:", await response.json());
+            alert("Error: Unable to fetch user data");
+          }
+        }
+
+        function renderUserList(userList) {
           const userListContainer = document.querySelector("ul");
           userListContainer.innerHTML = "";
 
-          body.userList.forEach(user => {
+          userList.forEach(user => {
             const userItem = document.createElement("li");
             userItem.innerHTML = `
-                        <button onclick="showUserDetail('${user.id}')">${user.username}</button>
-                        <button onclick="showUpdateForm('${user.id}', '${user.username}', '${user.password}')">Update</button>
-                        <button onclick="showDeleteForm('${user.id}', '${user.username}')">Delete</button>
-                    `;
+            <button onclick="showUserDetail('${user.id}')">${user.username}</button>
+            <button onclick="showUpdateForm('${user.id}', '${user.username}', '${user.password}')">Update</button>
+            <button onclick="showDeleteForm('${user.id}', '${user.username}')">Delete</button>
+            `;
             userListContainer.appendChild(userItem);
           });
-        } else {
-          const errorData = await response.json();
-          console.error("Error Response:", errorData);
-          alert("Error: " + (errorData.message || "Unable to delete user"));
         }
+
+        function renderPagination(currentPage, totalPage, username) {
+          const paginationContainer = document.querySelector(".pagination");
+          paginationContainer.innerHTML = "";
+
+          if (Number(currentPage) > 1) {
+            const prevPageLink = document.createElement("a");
+            prevPageLink.href = "#";
+            prevPageLink.textContent = "Previous";
+            prevPageLink.addEventListener("click", () => fetchData(Number(currentPage) - 1));
+            paginationContainer.appendChild(prevPageLink);
+          }
+
+          for (let i = 1; i <= Number(totalPage); i++) {
+            const pageLink = document.createElement("a");
+            pageLink.href = "#";
+            pageLink.textContent = i;
+            if (i === Number(currentPage)) {
+              pageLink.style.fontWeight = "bold";
+            }
+            pageLink.addEventListener("click", () => fetchData(Number(i)));
+            paginationContainer.appendChild(pageLink);
+          }
+
+          if (Number(currentPage) < Number(totalPage)) {
+            const nextPageLink = document.createElement("a");
+            nextPageLink.href = "#";
+            nextPageLink.textContent = "Next";
+            nextPageLink.addEventListener("click", () => fetchData(Number(currentPage) + 1));
+            paginationContainer.appendChild(nextPageLink);
+          }
+        }
+
+        await fetchData(Number(currentPage));
       } catch (error) {
         console.error("Error:", error);
         alert("An unexpected error occurred.");
       }
     }
   });
-
-
 </script>
 </body>
 </html>

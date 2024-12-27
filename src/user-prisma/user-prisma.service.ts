@@ -28,8 +28,10 @@ export class UserPrismaService {
     return { username: user.username };
   }
 
-  async search(username: string) {
+  async search(username: string, page: number, limit: number) {
     const userList = await this.prisma.user.findMany({
+      skip: (page - 1) * limit,
+      take: limit,
       select: {
         id: true,
         username: true,
@@ -41,8 +43,21 @@ export class UserPrismaService {
         },
       },
     });
+    const total = await this.prisma.user.count({
+      where: {
+        username: {
+          contains: username,
+          mode: 'insensitive', // 대소문자 구분 X
+        },
+      },
+    });
+
     console.log('search: ', userList);
-    return { userList };
+    return {
+      userList,
+      currentPage: page,
+      totalPage: Math.ceil(total / limit),
+    };
   }
 
   async findAll() {
@@ -54,6 +69,27 @@ export class UserPrismaService {
     });
     console.log('findAll: ', { userList });
     return { userList };
+  }
+
+  async findUserPage(page: number, limit: number) {
+    const userList = await this.prisma.user.findMany({
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    const total = await this.prisma.user.count();
+
+    console.log('userList: ', userList);
+    console.log('total: ', total);
+    console.log('page: ', page);
+    console.log('totalPage: ', Math.ceil(total / limit));
+
+    return {
+      userList,
+      total,
+      page,
+      limit,
+      totalPage: Math.ceil(total / limit),
+    };
   }
 
   async findOne(id: string) {

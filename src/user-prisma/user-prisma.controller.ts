@@ -23,14 +23,24 @@ export class UserPrismaController {
   }
 
   @Get('search')
-  search(@Query('username') username: string) {
-    return this.userPrismaService.search(username);
+  search(
+    @Query('username') username: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 2,
+  ) {
+    return this.userPrismaService.search(username, page, limit);
   }
+
+  // @Get()
+  // @Render('user-prisma/index')
+  // findAll() {
+  //   return this.userPrismaService.findAll();
+  // }
 
   @Get()
   @Render('user-prisma/index')
-  findAll() {
-    return this.userPrismaService.findAll();
+  findUserPage(@Query('page') page = 1, @Query('limit') limit = 2) {
+    return this.userPrismaService.findUserPage(page, limit);
   }
 
   @Get(':id')

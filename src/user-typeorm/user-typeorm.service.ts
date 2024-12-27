@@ -30,25 +30,49 @@ export class UserTypeormService {
     return { username: user.username };
   }
 
-  async search(username: string) {
+  async search(username: string, page: number, limit: number) {
     // const userList = await this.userTypeormRepository
     //   .createQueryBuilder('user')
     //   .select(['user.id', 'user.username'])
     //   .where('user.username ILIKE :username', { username: `%${username}%` }) // postgres
     //   .getMany();
-    const userList = await this.userTypeormRepository.find({
+    const [userList, total] = await this.userTypeormRepository.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
       where: {
         username: Like(`%${username.toLowerCase()}%`),
       },
     });
 
-    console.log(userList);
-    return { userList };
+    console.log('test:', {
+      userList,
+      currentPage: page,
+      totalPage: Math.ceil(total / limit),
+    });
+    return {
+      userList,
+      currentPage: page,
+      totalPage: Math.ceil(total / limit),
+    };
   }
 
   async findAll() {
     const userList = await this.userTypeormRepository.find();
     return { userList };
+  }
+
+  async findUserPage(page: number, limit: number) {
+    const [userList, total] = await this.userTypeormRepository.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    console.log('userList: ', userList);
+    console.log('total: ', total);
+    console.log('page: ', page);
+    console.log('totalPage: ', Math.ceil(total / limit));
+
+    return { userList, total, page, totalPage: Math.ceil(total / limit) };
   }
 
   async findOne(id: number) {
