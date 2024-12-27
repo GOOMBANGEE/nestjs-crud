@@ -7,6 +7,7 @@ import {
 import { CreateUserPrismaDto } from './dto/create-user-prisma.dto';
 import { UpdateUserPrismaDto } from './dto/update-user-prisma.dto';
 import { PrismaService } from '../common/prisma.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserPrismaService {
@@ -17,8 +18,12 @@ export class UserPrismaService {
     if (userData.password !== passwordConfirm) {
       throw new HttpException('Password do not match', HttpStatus.BAD_REQUEST);
     }
+    const saltRound = 10;
+    const hashedPassword = await bcrypt.hash(userData.password, saltRound);
 
-    const user = await this.prisma.user.create({ data: userData });
+    const user = await this.prisma.user.create({
+      data: { ...userData, password: hashedPassword },
+    });
     console.log('Created User:', user);
     return user.username;
   }
