@@ -4,7 +4,7 @@ Typescript
 Node.js v18.18
 ejs
 
-mongodb - prisma
+mongodb - prisma  
 postgresql - typeorm 
 
 ## Project setup
