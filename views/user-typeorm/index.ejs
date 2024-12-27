@@ -46,6 +46,8 @@
         </li>
     <% }); %>
 </ul>
+
+<!-- user search -->
 <form id="searchUserForm">
     <label>Username: <input type="text" name="username"></label>
     <button type="submit">Search</button>
@@ -210,8 +212,8 @@
       });
 
       if (response.ok) {
-        const username = await response.json();
-        alert(`${username} created successfully!`);
+        const body = await response.json();
+        alert(`${body.username} created successfully!`);
         window.location.reload();
       } else {
         const errorData = await response.json();
@@ -243,8 +245,8 @@
       });
 
       if (response.ok) {
-        const username = await response.json();
-        alert(`${username} updated successfully!`);
+        const body = await response.json();
+        alert(`${body.username} updated successfully!`);
         window.location.reload();
       } else {
         const errorData = await response.json();
@@ -297,7 +299,41 @@
     const form = event.target;
     const formData = new FormData(form);
     const username = formData.get("username");
-    console.log(username);
+
+    if(username) {
+      try {
+        const response = await fetch(`/user-typeorm/search?username=${username}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (response.ok) {
+          const body = await response.json();
+          console.log(body);
+          console.log(body.userList)
+
+          const userListContainer = document.querySelector("ul");
+          userListContainer.innerHTML = "";
+
+          body.userList.forEach(user => {
+            const userItem = document.createElement("li");
+            userItem.innerHTML = `
+                        <button onclick="showUserDetail('${user.id}')">${user.username}</button>
+                        <button onclick="showUpdateForm('${user.id}', '${user.username}', '${user.password}')">Update</button>
+                        <button onclick="showDeleteForm('${user.id}', '${user.username}')">Delete</button>
+                    `;
+            userListContainer.appendChild(userItem);
+          });
+        } else {
+          const errorData = await response.json();
+          console.error("Error Response:", errorData);
+          alert("Error: " + (errorData.message || "Unable to delete user"));
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert("An unexpected error occurred.");
+      }
+    }
   });
 
 

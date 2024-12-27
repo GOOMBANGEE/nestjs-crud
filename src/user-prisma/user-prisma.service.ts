@@ -25,7 +25,24 @@ export class UserPrismaService {
       data: { ...userData, password: hashedPassword },
     });
     console.log('Created User:', user);
-    return user.username;
+    return { username: user.username };
+  }
+
+  async search(username: string) {
+    const userList = await this.prisma.user.findMany({
+      select: {
+        id: true,
+        username: true,
+      },
+      where: {
+        username: {
+          contains: username,
+          mode: 'insensitive', // 대소문자 구분 X
+        },
+      },
+    });
+    console.log('search: ', userList);
+    return { userList };
   }
 
   async findAll() {
@@ -35,8 +52,8 @@ export class UserPrismaService {
         username: true,
       },
     });
-    console.log({ userList });
-    return userList;
+    console.log('findAll: ', { userList });
+    return { userList };
   }
 
   async findOne(id: string) {
@@ -46,7 +63,7 @@ export class UserPrismaService {
     }
 
     console.log('User: ', user);
-    return user;
+    return { user };
   }
 
   async update(id: string, updateUserPrismaDto: UpdateUserPrismaDto) {
@@ -60,7 +77,7 @@ export class UserPrismaService {
       data: userData,
     });
     console.log('Updated User: ', updatedUser);
-    return updatedUser.username;
+    return { username: updatedUser.username };
   }
 
   async remove(id: string) {
@@ -68,6 +85,6 @@ export class UserPrismaService {
       where: { id },
     });
     console.log('Deleted User: ', deletedUser);
-    return deletedUser.username;
+    return { username: deletedUser.username };
   }
 }

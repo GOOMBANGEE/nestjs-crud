@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   Render,
 } from '@nestjs/common';
 import { UserTypeormService } from './user-typeorm.service';
@@ -18,33 +19,36 @@ export class UserTypeormController {
   constructor(private readonly userTypeormService: UserTypeormService) {}
 
   @Post()
-  async create(@Body() createUserTypeormDto: CreateUserTypeormDto) {
-    return await this.userTypeormService.create(createUserTypeormDto);
+  create(@Body() createUserTypeormDto: CreateUserTypeormDto) {
+    return this.userTypeormService.create(createUserTypeormDto);
+  }
+
+  @Get('search')
+  search(@Query('username') username: string) {
+    return this.userTypeormService.search(username);
   }
 
   @Get()
   @Render('user-typeorm/index')
-  async findAll() {
-    const userList = await this.userTypeormService.findAll();
-    return { userList };
+  findAll() {
+    return this.userTypeormService.findAll();
   }
 
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    const user = await this.userTypeormService.findOne(id);
-    return { user };
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.userTypeormService.findOne(id);
   }
 
   @Patch(':id')
-  async update(
+  update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateUserTypeormDto: UpdateUserTypeormDto,
   ) {
-    return await this.userTypeormService.update(id, updateUserTypeormDto);
+    return this.userTypeormService.update(id, updateUserTypeormDto);
   }
 
   @Delete(':id')
-  async remove(@Param('id', ParseIntPipe) id: number) {
-    return await this.userTypeormService.remove(id);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.userTypeormService.remove(id);
   }
 }
