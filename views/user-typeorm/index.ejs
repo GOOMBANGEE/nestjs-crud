@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" name="viewport">
+    <title>User Management</title>
+    <style>
+      .hidden {
+        display: none;
+      }
+
+      .modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+      }
+
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+      }
+    </style>
+</head>
+<body>
+<h1>Users</h1>
+
+<button onclick="showAddForm()">Add New User</button>
+<ul>
+    <% userList.forEach(user => { %>
+        <li>
+            <button onclick=showUserDetail('<%= user.id; %>')><%= user.username; %></button>
+            <button onclick="showUpdateForm('<%= user.id; %>', '<%= user.username; %>', '<%= user.password; %>')">
+                Update
+            </button>
+            <button onclick="showDeleteForm('<%= user.id; %>', '<%= user.username; %>')">Delete
+            </button>
+        </li>
+    <% }); %>
+</ul>
+<form id="searchUserForm">
+    <label>Username: <input type="text" name="username"></label>
+    <button type="submit">Search</button>
+</form>
+<div> Page</div>
+
+<!-- user detail -->
+<div id="detailModal" class="hidden">
+    <div class="modal-overlay">
+        <div class="modal">
+            <h1>User Detail</h1>
+            <label>Email: <span id="detailEmail"></span></label><br />
+            <label>Username: <span id="detailUsername"></span></label><br />
+            <label>Password: <span id="detailPassword"></span></label><br />
+            <label>Created Time: <span id="detailCreatedTime"></span></label><br />
+            <label>Updated Time: <span id="detailUpdatedTime"></span></label><br />
+            <button type="button" onclick="closeModal('detailModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- add user form -->
+<div id="addForm" class="hidden">
+    <div class="modal-overlay">
+        <div class="modal">
+            <h1>Create New User</h1>
+            <form id="addUserForm">
+                <label>Email: <input type="email" name="email"></label><br />
+                <label>Username: <input type="text" name="username"></label><br />
+                <label>Password: <input type="password" name="password"></label><br />
+                <label>PasswordConfirm: <input type="password" name="passwordConfirm"></label><br />
+                <button type="submit">Create</button>
+                <button type="button" onclick="closeModal('addForm')">Cancel</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- update user form -->
+<div id="updateForm" class="hidden">
+    <div class="modal-overlay">
+        <div class="modal">
+            <h1>Update User</h1>
+            <form id="updateUserForm">
+                <label>Username: <input type="text" name="username"
+                                        id="updateUsername"></label><br />
+                <label>Password: <input type="password" name="password"
+                                        id="updatePassword"></label><br />
+                <label>PasswordConfirm: <input type="password" name="passwordConfirm"
+                                               id="updatePasswordConfirm"></label><br />
+                <button type="submit">Update</button>
+                <button type="button" onclick="closeModal('updateForm')">Cancel</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- delete form -->
+<div id="deleteForm" class="hidden">
+    <div class="modal-overlay">
+    </div>
+    <div class="modal">
+        <h1>Delete User</h1>
+        <p>Are you sure you want to delete <span id="deleteTarget"></span>?</p>
+        <form id="deleteUserForm">
+            <label class="hidden"><input type="text" name="id" id="deleteUserId"></label>
+            <label>Username: <input type="text" name="username" id="deleteUsername"></label>
+
+            <button type="submit">Confirm</button>
+            <button type="button" onclick="closeModal('deleteForm')">Cancel</button>
+        </form>
+    </div>
+</div>
+
+<script>
+  // show user detail
+  async function showUserDetail(userId) {
+    const detailModal = document.getElementById("detailModal");
+    detailModal.classList.remove("hidden");
+    console.log("showUserDetail");
+    console.log(userId);
+
+    if (userId) {
+      try {
+        const response = await fetch(`/user-typeorm/${userId}`, {
+          method: "GET"
+        });
+
+        console.log(response)
+        if (response.ok) {
+          const body = await response.json();
+          console.log(body.user);
+          document.getElementById("detailEmail").textContent = body.user.email;
+          document.getElementById("detailUsername").textContent = body.user.username;
+          document.getElementById("detailPassword").textContent = body.user.password;
+          document.getElementById("detailCreatedTime").textContent = body.user.created_at;
+          document.getElementById("detailUpdatedTime").textContent = body.user.updated_at;
+
+        } else {
+          const errorData = await response.json();
+          console.error("Error Response:", errorData);
+          alert("Error: " + (errorData.message || "Unable to Find user"));
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert("An unexpected error occurred.");
+      }
+    }
+  }
+
+  // modal open
+  function showAddForm() {
+    const addForm = document.getElementById("addForm");
+    addForm.classList.remove("hidden");
+  }
+
+  function showUpdateForm(userId, username) {
+    document.getElementById("updateUsername").value = username;
+    const updateUserForm = document.getElementById("updateUserForm");
+    updateUserForm.dataset.userId = userId;
+
+    const updateForm = document.getElementById("updateForm");
+    updateForm.classList.remove("hidden");
+  }
+
+  function showDeleteForm(userId, username) {
+    const deleteUserForm = document.getElementById("deleteUserForm");
+    document.getElementById("deleteTarget").textContent = username;
+    deleteUserForm.dataset.userId = userId;
+
+    const deleteForm = document.getElementById("deleteForm");
+    deleteForm.classList.remove("hidden");
+  }
+
+  // modal close & reset data
+  function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    const form = modal.querySelector("form");
+
+    if (form) {
+      form.reset();
+    }
+    if (modal) {
+      modal.classList.add("hidden");
+    }
+  }
+
+  // add user
+  document.getElementById("addUserForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    console.log(data);
+
+    try {
+      const response = await fetch("/user-typeorm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      if (response.ok) {
+        const username = await response.json();
+        alert(`${username} created successfully!`);
+        window.location.reload();
+      } else {
+        const errorData = await response.json();
+        console.error("Error Response:", errorData);
+        alert("Error: " + (errorData.message || "Unable to create user"));
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An unexpected error occurred.");
+    }
+  });
+
+  // update user
+  document.getElementById("updateUserForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
+    const form = event.target;
+    const userId = form.dataset.userId;
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    console.log(userId);
+    console.log(data);
+
+    try {
+      const response = await fetch(`/user-typeorm/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      if (response.ok) {
+        const username = await response.json();
+        alert(`${username} updated successfully!`);
+        window.location.reload();
+      } else {
+        const errorData = await response.json();
+        console.error("Error Response:", errorData);
+        alert("Error: " + (errorData.message || "Unable to update user"));
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An unexpected error occurred.");
+    }
+  });
+
+  // delete user
+  document.getElementById("deleteUserForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
+    const form = event.target;
+    const userId = form.dataset.userId;
+    const target = document.getElementById("deleteTarget").textContent;
+    const username = document.getElementById("deleteUsername").value;
+
+    console.log(userId);
+    console.log(target);
+    console.log(username);
+
+    if (target === username) {
+      try {
+        const response = await fetch(`/user-typeorm/${userId}`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" }
+        });
+
+        if (response.ok) {
+          alert(`${username} deleted successfully!`);
+          window.location.reload();
+        } else {
+          const errorData = await response.json();
+          console.error("Error Response:", errorData);
+          alert("Error: " + (errorData.message || "Unable to delete user"));
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert("An unexpected error occurred.");
+      }
+    }
+  });
+
+  // search user
+  document.getElementById("searchUserForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const username = formData.get("username");
+    console.log(username);
+  });
+
+
+</script>
+</body>
+</html>
